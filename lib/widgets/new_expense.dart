@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:expense_tracker_app/models/expense.dart';
+
+final formatter = DateFormat.yMd();
 
 class NewExpense extends StatefulWidget {
   const NewExpense({super.key});
@@ -14,16 +18,34 @@ class _NewExpensesState extends State<NewExpense> {
 
   final _amountController = TextEditingController();
 
-  void _presentDatePicker() {
+  DateTime? _selectedDate;
+
+  Category _selectedCategory = Category.leisure;
+
+  void _presentDatePicker() async {
     final now = DateTime.now();
 
     final firstDate = DateTime(now.year - 1, now.month, now.day);
 
-    showDatePicker(
+    final pickedDate = await showDatePicker(
         context: context,
         initialDate: now,
         firstDate: firstDate,
         lastDate: now);
+
+    setState(() {
+      _selectedDate = pickedDate;
+    });
+  }
+
+  void _submitExpenseData() {
+    final enteredAmount = double.tryParse(_amountController.text);
+
+    final amountIsInvalid = enteredAmount == null || enteredAmount <= 0;
+
+    if(_titleController.text.trim().isEmpty || amountIsInvalid || _selectedDate == null) {
+
+    }
   }
 
   @override
@@ -63,7 +85,11 @@ class _NewExpensesState extends State<NewExpense> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    const Text('Selected date'),
+                    Text(
+                      _selectedDate == null
+                          ? 'No date selected'
+                          : formatter.format(_selectedDate!),
+                    ),
                     IconButton(
                       onPressed: _presentDatePicker,
                       icon: const Icon(Icons.calendar_month),
@@ -73,13 +99,31 @@ class _NewExpensesState extends State<NewExpense> {
               ),
             ],
           ),
+          const SizedBox(height: 16),
           Row(
             children: [
-              ElevatedButton(
-                onPressed: () {
-                  print(_titleController.text);
-                  print(_amountController.text);
+              DropdownButton(
+                value: _selectedCategory,
+                items: Category.values
+                    .map(
+                      (category) => DropdownMenuItem(
+                        value: category,
+                        child: Text(category.name.toUpperCase()),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+                  setState(() {
+                    _selectedCategory = value;
+                  });
                 },
+              ),
+              const Spacer(),
+              ElevatedButton(
+                onPressed: _submitExpenseData,
                 child: const Text('Save expense'),
               ),
               TextButton(
